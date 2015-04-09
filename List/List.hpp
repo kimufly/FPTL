@@ -1,11 +1,27 @@
-#include <stddef>
-#include <iterator>
-
 #ifndef _LIST_HPP
 #define _LIST_HPP
 
+#include <cstddef>
+#include <iterator>
+
 namespace fl
 {
+	template <class T> 
+		struct Iterator
+	{
+		bool operator==(const Iterator& rhs);
+
+	};
+
+	template <class T> 
+		struct InputIterator
+	{
+	};
+
+	template <class T>
+		struct ReverseIterator
+	{
+	};
 	template <class T> class List
 	{
 		using difference_type = std::ptrdiff_t;
@@ -20,8 +36,25 @@ namespace fl
 			explicit List( size_type count );
 			template <class InputIterator>
 				List(InputIterator first, InputIterator last);
-			List(const List& other);
-			List(List&& other);
+			List(const List& other) : 
+				m_head(other.m_head),
+				m_tail(other.m_tail),
+				m_next(other.m_next),
+				m_prev(other.m_prev),
+				m_count(other.m_count) {}
+			List(List&& other) 
+			{
+				this->m_head = other.m_head;
+				this->m_tail = other.m_tail;
+				this->m_next = other.m_next;
+				this->m_prev = other.m_prev;
+				this->m_count = std::move(other.m_count);
+
+				other.m_head = nullptr;
+				other.m_tail = nullptr;
+				other.m_next = nullptr;
+				other.m_prev = nullptr;
+			}
 			List(std::initializer_list<T> init);
 			~List() 
 			{
@@ -35,9 +68,12 @@ namespace fl
 
 			bool empty() { return m_count == 0; }
 			size_type size() { return m_count; }
-			size_type max_size() { return std::distance(begin(), end()); }
+			// size_type max_size() { return std::distance(begin(), end()); }
 
-			void clear();
+			void clear()
+			{
+
+			}
 
 
 
@@ -45,6 +81,8 @@ namespace fl
 		private:
 			pointer_type m_head;
 			pointer_type m_tail;
+			pointer_type m_next;
+			pointer_type m_prev;
 			size_type m_count;
 			
 	};
