@@ -2,7 +2,9 @@
 #define _LIST_HPP
 
 #include <cstddef>
+#include <memory>
 #include <iterator>
+#include <stdexcept>
 
 namespace fl
 {
@@ -15,45 +17,92 @@ namespace fl
 
 		};
 
+		template <class T> struct ConstIterator
+		{
+		};
+
 		template <class T> struct InputIterator
 		{
 		};
 
-		template <class T> struct ReverseIterator
-		{
-		};
+		using ReverseIterator = std::reverse_iterator<Iterator>;
+		using ConstReverseIterator = std::reverse_iterator<ConstIterator>;
 
-		template <class T> struct Node
+		template <
+			class T, 
+			class Allocator = std::allocator<T> 
+		> 
+		struct ListNode 
 		{
 
-			Node() 
+			using alloc_type = Allocator;
+			using pointer = std::allocator_traits<alloc_type>::pointer;
+			ListNode() 
 			{
 				m_next = this;
 				m_prev = this;
 				m_value = nullptr;
 			}
+
+			ListNode(const T& value, 
+					 Allocator alloc = Allocator())
+			{
+			}
 			~Node() {}
-			T* m_value;
-			Node* m_next;
-			Node* m_prev;
+			pointer m_value;
+			ListNode* m_next;
+			ListNode* m_prev;
 		};
 
-		template <class T> class List
+		template <
+			class T, 
+			class Allocator = std::allocator<T> 
+		> 
+		class List
 		{
+			using alloc_type = Allocator;
 			using difference_type = std::ptrdiff_t;
-			using node_ptr = Node<T>*;
+			using node_type = ListNode<T, alloc_type>;
+			using node_ptr = node_type*;
 			using size_type = std::size_t;
 			using value_type = T;
-			using pointer_type = value_type*;
+			using pointer = std::allocator_traits<alloc_type>::pointer;
+			using const_pointer = std::allocator_traits<alloc_type>::const_pointer;
 			using reference = value_type&;
 			using const_reference = const value_type&;
-			using node_reference = Node<T>&;
-			using const_node_reference = const Node<T>&;
+			using const_node_reference = const ListNode<T, alloc_type>&;
 
 			public:
-			List() {}
-			List( std::size_t count, const T& value);
-			explicit List( size_type count );
+			explicit List(const Allocator& alloc = Allocator()) 
+			{
+				try
+				{
+
+				}
+				catch (const std::bad_alloc& ex)
+				{
+					std::cerr << "Allocation Failed!" << std::endl;
+				}
+			}
+			List( size_type count, 
+					const T& value, 
+					const Allocator& alloc = Allocator() )
+			{
+				m_count = count;
+				for (int i = 0; i < count; i++)
+				{
+					pointer p = alloc.allocate(1);
+				}
+				
+
+
+			}
+			// C++14
+			explicit List( size_type count,
+						   const Allocator& alloc = Allocator()	)
+			{
+
+			}
 			template <class InputIterator>
 				List(InputIterator first, InputIterator last);
 			List(const List& other) : 
@@ -75,10 +124,10 @@ namespace fl
 
 			}
 
-			const_reference front() const { return &(*m_head); }
-			reference front() { return &(*m_head); }
-			const_reference back() const { return &(*m_tail); }
-			reference back() { return &(*m_tail); }
+			const_reference front() const { return &(m_head->m_value); }
+			reference front() { return &(m_head->m_value); }
+			const_reference back() const { return &(m_tail->m_value); }
+			reference back() { return &(*m_tail->m_value); }
 
 			bool empty() { return m_count == 0; }
 			size_type size() { return m_count; }
