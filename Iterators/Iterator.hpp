@@ -7,15 +7,6 @@ namespace fl
 {
 	namespace iterator
 	{
-		template <bool flag, class T, class F> struct choose;
-		template <class T, class F> struct choose<true, T, F>
-		{
-			using type = T;
-		};
-		template <class T, class F> struct choose<false, T, F>
-		{
-			using type = F;
-		};
 
 		struct InputIteratorTag {};
 		struct OutputIteratorTag {};
@@ -82,13 +73,14 @@ namespace fl
 			using reference = typename IteratorTraits<Iter>::reference;
 
 			protected:
-			pointer current;
+			iterator_type current;
 
 			ReverseIterator() {}
-			explicit ReverseIterator( Iter x );
+			explicit ReverseIterator( iterator_type x ) : current(x) {}
 			template <class U>
-			ReverseIterator(const ReverseIterator<U>& other);
+			ReverseIterator(const ReverseIterator<U>& other) : current(other.current) {}
 
+			Iter base() const { return ; }
 			ReverseIterator& operator++();
 			ReverseIterator& operator--();
 
@@ -103,6 +95,17 @@ namespace fl
 			
 		};
 
+		template <class I1, class I2>
+		bool operator==(const ReverseIterator<I1>& lhs, const ReverseIterator<I2>& rhs)
+		{
+			return lhs.base() == rhs.base();
+		}
+
+		template <class I1, class I2>
+		bool operator!=(const ReverseIterator<I1>& lhs, const ReverseIterator<I2>& rhs)
+		{
+			return lhs.base() != rhs.base();
+		}
 	}
 }
-#endif //Iterators.hpp
+#endif //Iterator.hpp
