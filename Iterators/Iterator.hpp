@@ -1,11 +1,12 @@
-#ifndef _ITERATORS_HPP
-#define _ITERATORS_HPP
+#ifndef _ITERATOR_HPP
+#define _ITERATOR_HPP
 
 #include <cstddef>
+#include <memory>
 
 namespace fl
 {
-	namespace iterator
+	namespace iterators
 	{
 
 		struct InputIteratorTag {};
@@ -73,25 +74,72 @@ namespace fl
 			using reference = typename IteratorTraits<Iter>::reference;
 
 			protected:
-			iterator_type current;
+				iterator_type current;
 
-			ReverseIterator() {}
-			explicit ReverseIterator( iterator_type x ) : current(x) {}
-			template <class U>
-			ReverseIterator(const ReverseIterator<U>& other) : current(other.current) {}
+			public:
+				ReverseIterator() {}
+				explicit ReverseIterator( iterator_type x ) : current(x) {}
 
-			Iter base() const { return ; }
-			ReverseIterator& operator++();
-			ReverseIterator& operator--();
+				iterator_type base() const { return current; }
 
-			ReverseIterator operator++(int);
-			ReverseIterator operator--(int);
+				reference operator*() const
+				{
+					Iter tmp = current;
+					return *--tmp;
+				}
 
-			ReverseIterator operator+(difference_type n) const;
-			ReverseIterator operator-(difference_type n) const;
+				pointer operator->() const
+				{
+					return std::addressof(operator*());
+				}
 
-			ReverseIterator& operator+=(difference_type n);
-			ReverseIterator& operator-=(difference_type n);
+				ReverseIterator& operator++()
+				{
+					--current;
+					return *this;
+				}
+				ReverseIterator& operator--()
+				{
+					++current;
+					return *this;
+				}
+
+				ReverseIterator operator++(int)
+				{
+					ReverseIterator rit = *this;
+					--current;
+					return rit;
+				}
+				ReverseIterator operator--(int)
+				{
+					ReverseIterator rit = *this;
+					++current;
+					return rit;
+				}
+
+				ReverseIterator operator+(difference_type n) const
+				{
+					ReverseIterator rit = *this;
+					current = current - n;
+					return rit;
+				}
+				ReverseIterator operator-(difference_type n) const
+				{
+					ReverseIterator rit = *this;
+					current = current + n;
+					return rit;
+				}
+
+				ReverseIterator& operator+=(difference_type n)
+				{
+					current = current - n;
+					return *this;
+				}
+				ReverseIterator& operator-=(difference_type n)
+				{
+					current = current + n;
+					return *this;
+				}
 			
 		};
 
@@ -105,6 +153,30 @@ namespace fl
 		bool operator!=(const ReverseIterator<I1>& lhs, const ReverseIterator<I2>& rhs)
 		{
 			return lhs.base() != rhs.base();
+		}
+
+		template <class I1, class I2>
+		bool operator>=(const ReverseIterator<I1>& lhs, const ReverseIterator<I2>& rhs)
+		{
+			return lhs.base() >= rhs.base();
+		}
+
+		template <class I1, class I2>
+		bool operator<=(const ReverseIterator<I1>& lhs, const ReverseIterator<I2>& rhs)
+		{
+			return lhs.base() <= rhs.base();
+		}
+
+		template <class I1, class I2>
+		bool operator>(const ReverseIterator<I1>& lhs, const ReverseIterator<I2>& rhs)
+		{
+			return lhs.base() > rhs.base();
+		}
+
+		template <class I1, class I2>
+		bool operator<(const ReverseIterator<I1>& lhs, const ReverseIterator<I2>& rhs)
+		{
+			return lhs.base() < rhs.base();
 		}
 	}
 }
