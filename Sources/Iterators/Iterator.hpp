@@ -178,6 +178,9 @@ namespace fl
 		{
 			return lhs.base() < rhs.base();
 		}
+
+		template <class C>
+		auto begin(C& c) -> decltype(c.begin()) {}
 	}
 }
 #endif //Iterator.hpp
