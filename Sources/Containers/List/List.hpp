@@ -3,10 +3,12 @@
 
 #include <iostream>
 #include <stdexcept>
+#include <type_traits>
 #include "../../Iterators/Iterator.hpp"
 
 namespace fl
 {
+	using fl::iterators::IteratorTraits;
 	namespace containers
 	{
 		
@@ -61,6 +63,18 @@ namespace fl
 				using const_reference = const value_type&;
 
 			private:
+				template <class Tp, typename = void>
+				struct is_iterator
+				{
+					static constexpr bool value = false;
+				};
+
+				template <class Tp>
+				struct is_iterator<Tp, 
+								   typename std::enable_if<!std::is_same<typename fl::iterators::IteratorTraits<Tp>::value_type, void>::value>::type>
+				{
+					static constexpr bool value = true;
+				};
 				template <bool flag_is_const, class True, class False> struct type_picker {};
 				template <class True, class False> struct type_picker<true, True, False>
 				{
@@ -73,8 +87,6 @@ namespace fl
 				};
 				template <class U, bool is_const = false> class Iterator
 				{
-
-					friend class List<U>;
 
 					public:
 						using iterator_category = fl::iterators::BidirectionalIteratorTag;
@@ -99,7 +111,7 @@ namespace fl
 						}
 						pointer operator->() const
 						{
-
+							return std::addressof(operator*());
 						}
 						Iterator& operator++()
 						{
@@ -209,14 +221,35 @@ namespace fl
 
 				}
 
-				/**
-				  template <class InputIterator>
-				  List(InputIterator first, InputIterator last)
-				  {
-				  }
+				List(List&& other);
+				List(List&& other, const Allocator& alloc);
+				/*
+				template <class InputIterator>
+				List(InputIterator first, 
+					 InputIterator last,
+					 const Allocator& alloc = Allocator())
+				{
+					if (is_iterator<InputIterator>::value)
+					{
 
+
+					}
+					else
+					{
+						
+						List(first, last, alloc);
+					}
+				}
 				*/
-				List(std::initializer_list<T> init);
+				List(std::initializer_list<T> init)
+				{
+					m_count = init.size();
+					for (auto it = init.begin(); it != init.end(); ++it)
+					{
+
+					}
+
+				}
 				~List() 
 				{
 					
@@ -247,7 +280,8 @@ namespace fl
 				{
 					return m_count == 0 && begin() == end();
 				}
-				size_type size() { return m_count; }
+
+				size_type size() const { return m_count; }
 
 				void clear()
 				{

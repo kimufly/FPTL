@@ -5,7 +5,6 @@
 int main()
 {
 	ftd::List<int> lst(4, 5);
-
 	ftd::List<int>::iterator it = lst.begin();
 	ftd::List<int>::const_iterator cit = lst.cbegin();
 	ftd::List<int>::reverse_iterator rit = lst.rbegin();
