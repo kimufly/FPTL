@@ -6,7 +6,7 @@
 namespace ftd
 {
 	template <class T>
-		using List = fl::container::List<T>;
+	using List = fl::container::List<T>;
 }
 
 #endif

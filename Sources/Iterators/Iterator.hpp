@@ -106,13 +106,13 @@ namespace fl
 
 				ReverseIterator operator++(int)
 				{
-					ReverseIterator rit = *this;
+					ReverseIterator rit(*this);
 					--current;
 					return rit;
 				}
 				ReverseIterator operator--(int)
 				{
-					ReverseIterator rit = *this;
+					ReverseIterator rit(*this);
 					++current;
 					return rit;
 				}

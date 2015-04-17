@@ -19,12 +19,19 @@ namespace fl
 		{
 			using pointer = Node_base*;
 			Node_base() : m_next(this), m_prev(this) {}
+			Node_base& operator=(Node_base& other) 
+			{
+				m_next = other.m_next;
+				m_prev = other.m_prev;	
+
+				return *this;
+			}
 			virtual ~Node_base() {}
 			pointer m_next;
 		    pointer m_prev;
 		};
 
-		template <class T> struct ListNode : Node_base
+		template <class T> struct ListNode : public Node_base
 		{
 			using value_type = T;
 			ListNode(const T& t) : m_data(t) {}
@@ -44,7 +51,9 @@ namespace fl
 			using size_type = std::size_t;
 			using difference_type = std::ptrdiff_t;
 			using node_type = ListNode<T>;
+			using node_base_type = Node_base;
 			using node_ptr = node_type*;
+			using node_base_ptr = node_base_type*;
 			using pointer = typename std::allocator_traits<alloc_type>::pointer;
 			using const_pointer = typename std::allocator_traits<alloc_type>::const_pointer;
 			using reference = value_type&;
@@ -77,6 +86,33 @@ namespace fl
 						Iterator() {}
 						Iterator(node_ptr p = 0) : m_node(p) {}
 						Iterator(const Iterator& other) : m_node(other.m_node) {}
+						~Iterator() {}
+
+						reference operator*() const;
+						pointer operator->() const;
+						Iterator& operator++()
+						{
+							m_node = dynamic_cast<Node_base*>(m_node->m_next);
+							return *this;
+						}
+						Iterator operator++(int)
+						{
+							Iterator it(*this);
+							m_node = dynamic_cast<Node_base*>(m_node->m_next);
+							return it;
+						}
+
+						Iterator& operator--()
+						{
+							m_node = dynamic_cast<Node_base*>(m_node->m_prev);
+							return *this;
+						}
+						Iterator operator--(int)
+						{
+							Iterator it(*this);
+							m_node = dynamic_cast<Node_base*>(m_node->m_prev);
+							return it;
+						}
 					
 				};	
 			public:
@@ -85,7 +121,6 @@ namespace fl
 				using reverse_iterator = fl::iterators::ReverseIterator<iterator>;
 				using const_reverse_iterator = fl::iterators::ReverseIterator<const_iterator>;
 
-				List() {}
 				explicit List(const Allocator& alloc = Allocator()) 
 				{ 
 					m_alloc = alloc;
@@ -110,25 +145,27 @@ namespace fl
 						p++;
 					}
 					typename decltype(m_alloc)::template rebind<node_type>::other m_node_alloc;
+					typename decltype(m_alloc)::template rebind<node_base_type>::other m_node_base_alloc;
+
 					node_ptr np = m_node_alloc.allocate(count);
 					i = 0;
 					while (i < (int) count)
 					{
-						m_node_alloc.construct(np, ListNode<T>(std::move(p[i])));
+						m_node_alloc.construct(np, ListNode<T>(p[i]));
 						np++;
 					}
 					p = nullptr;
-					m_sentinal = m_node_alloc.allocate(1);
-					m_node_alloc.construct(m_sentinal, Node_base());
-					m_head = std::move(np[0]);
+					m_sentinal = m_node_base_alloc.allocate(1);
+					m_node_base_alloc.construct(m_sentinal, Node_base());
+					m_head = &np[0];
 					m_head->m_prev = m_sentinal;
 					i = 1;
-					pointer temp = m_head;
+					node_ptr temp = m_head;
 					while (i < (int) count)
 					{
-						temp->m_next = std::move(np[i]);
+						temp->m_next = &np[i];
 						temp->m_next->m_prev = temp;
-						temp = temp->m_next;
+						temp = (node_ptr) temp->m_next;
 					}
 					m_tail = temp;
 					m_tail->m_next = m_sentinal;
@@ -137,7 +174,7 @@ namespace fl
 
 				// C++14
 				explicit List( size_type count,
-						const Allocator& alloc = Allocator()	)
+						const Allocator& alloc = Allocator())
 				{
 					pointer p = alloc.allocate(count);
 					m_count = count;
@@ -155,7 +192,8 @@ namespace fl
 				List(std::initializer_list<T> init);
 				~List() 
 				{
-
+					node_ptr temp = m_head;
+					
 				}
 
 				const_reference front() const { return m_head->m_data; }
@@ -168,7 +206,8 @@ namespace fl
 
 				void clear()
 				{
-
+					if (!empty())
+						delete this;
 				}
 
 				const alloc_type get_allocator() const { return m_alloc; }
@@ -176,7 +215,7 @@ namespace fl
 			private:
 				node_ptr m_head;
 				node_ptr m_tail;
-				node_ptr m_sentinal;
+				node_base_ptr m_sentinal;
 				size_type m_count;
 				alloc_type m_alloc;
 		};

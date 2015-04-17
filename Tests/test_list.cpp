@@ -3,6 +3,6 @@
 
 int main()
 {
-	ftd::List<int> l(4, 5);
+	ftd::List<int> lst(4, 5);
 	return 0;
 }
