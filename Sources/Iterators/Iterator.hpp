@@ -68,24 +68,23 @@ namespace fl
 									typename IteratorTraits<Iter>::pointer,
 									typename IteratorTraits<Iter>::reference >
 		{
-			using iterator_type = Iter;
-			using difference_type = typename IteratorTraits<Iter>::difference_type;
-			using pointer = typename IteratorTraits<Iter>::pointer;
-			using reference = typename IteratorTraits<Iter>::reference;
 
-			protected:
-				iterator_type current;
 
 			public:
-				ReverseIterator() {}
+				using iterator_type = Iter;
+				using difference_type = typename IteratorTraits<Iter>::difference_type;
+				using pointer = typename IteratorTraits<Iter>::pointer;
+				using reference = typename IteratorTraits<Iter>::reference;
+
 				explicit ReverseIterator( iterator_type x ) : current(x) {}
 
 				iterator_type base() const { return current; }
 
 				reference operator*() const
 				{
-					Iter tmp = current;
-					return *--tmp;
+					iterator_type tmp = current;
+					--tmp;
+					return *tmp;
 				}
 
 				pointer operator->() const
@@ -140,6 +139,9 @@ namespace fl
 					current = current + n;
 					return *this;
 				}
+
+			protected:
+				iterator_type current;
 			
 		};
 
