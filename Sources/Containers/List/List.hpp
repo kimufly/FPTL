@@ -185,6 +185,7 @@ namespace fl
 							m_node_alloc.construct(np+i, value);
 							i++;
 						}
+
 						m_sentinal = m_node_alloc.allocate(1);
 						m_node_alloc.construct(m_sentinal, 0);
 						m_head = &np[0];
@@ -218,7 +219,6 @@ namespace fl
 					pointer p = alloc.allocate(count);
 					m_count = count;
 					m_alloc = alloc;
-
 				}
 
 				List(List&& other);
@@ -285,8 +285,6 @@ namespace fl
 
 				void clear()
 				{
-					if (!empty())
-						delete this;
 				}
 
 				const alloc_type get_allocator() const { return m_alloc; }
