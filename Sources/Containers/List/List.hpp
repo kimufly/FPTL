@@ -73,10 +73,11 @@ namespace fl
 					catch (const std::bad_alloc& e)
 					{
 						std::cerr << "Allocation of node failed." << std::endl;
+						return nullptr;
 					}
 				}
 
-				void m_construct_node(node_ptr node, reference value)
+				void m_construct_node(node_ptr node, const_reference value)
 				{
 					typename decltype(m_alloc)::template rebind<node_type>::other m_node_alloc;
 					m_node_alloc.construct(node, value);
@@ -94,6 +95,14 @@ namespace fl
 					dealloc.destroy(node);
 					dealloc.deallocate(node, 1);
 					node = nullptr;
+				}
+
+				template <class InputIt>
+				void m_iterator_initialize(InputIt first,
+										   InputIt last,
+										   const Allocator& alloc = Allocator())
+				{
+
 				}
 
 				void m_fill_initialize(size_type count,
@@ -119,7 +128,7 @@ namespace fl
 					}
 
 					m_head = np;
-					m_tail = np[count-1];
+					m_tail = &np[count-1];
 
 					m_head->m_prev = m_sentinal;
 					m_tail->m_next = m_sentinal;
@@ -275,6 +284,7 @@ namespace fl
 					}
 					else
 					{
+						m_iterator_initialize(first, last, alloc);
 					}
 				}
 
@@ -324,7 +334,7 @@ namespace fl
 						node_ptr temp = current;
 						m_destroy_node(temp);
 						m_put_node(temp);
-						current = current->m_next;
+						current = dynamic_cast<node_ptr>(current->m_next);
 					}
 					current = nullptr;
 					m_head = m_sentinal;
@@ -383,12 +393,21 @@ namespace fl
 					pos.m_node->m_prev->m_next = &np[0];
 					pos.m_node->m_prev = &np[count-1];
 
-					return iterator(&np[0]);
+					return iterator(np);
 				}
 
 				template <class InputIt>
 				iterator insert(iterator pos, InputIt first, InputIt last)
 				{
+					if (std::is_integral<InputIt>::value)
+					{
+						return insert(pos, first, last);
+					}
+					else
+					{
+
+					}
+
 				}
 
 				const alloc_type get_allocator() const { return m_alloc; }
