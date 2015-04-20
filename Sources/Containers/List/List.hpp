@@ -36,14 +36,14 @@ namespace fl
 			using value_type = T;
 			ListNode(const T& t) : m_data(t) {}
 			ListNode(T&& t) : m_data(std::move(t)) {}
+			~ListNode() override {}
 			value_type m_data;
 		};
 
 
 		template <
 				   class T, 
-				   class Allocator = std::allocator<T> 
-				 >
+				   class Allocator = std::allocator<T> >
 		class List
 		{
 			public:
@@ -273,7 +273,20 @@ namespace fl
 					pos.m_node->m_prev = &np[count-1];
 				}
 				template <class InputIt>
-					void m_insert(iterator pos, InputIt first, InputIt last);
+				void m_insert(iterator pos, InputIt first, InputIt last)
+				{
+
+					pos.m_node->m_prev = last.m_node->m_prev;
+					
+					for (InputIt it = first; it != last; ++it)
+					{
+						--pos;
+					}
+
+					
+
+				}
+					
 
 
 			public:
