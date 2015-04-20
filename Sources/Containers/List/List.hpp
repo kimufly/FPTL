@@ -8,10 +8,8 @@
 
 namespace fl
 {
-	using fl::iterators::IteratorTraits;
 	namespace containers
 	{
-		
 		struct Node_base;
 		template <class T> struct ListNode;
 		template <class T, class Allocator> class List;
@@ -30,7 +28,7 @@ namespace fl
 			}
 			virtual ~Node_base() {}
 			pointer m_next;
-		    pointer m_prev;
+			pointer m_prev;
 		};
 
 		template <class T> struct ListNode : public Node_base
@@ -43,9 +41,9 @@ namespace fl
 
 
 		template <
-			class T, 
-			class Allocator = std::allocator<T> 
-		> 
+				   class T, 
+				   class Allocator = std::allocator<T> 
+				 >
 		class List
 		{
 			public:
@@ -99,15 +97,15 @@ namespace fl
 
 				template <class InputIt>
 				void m_iterator_initialize(InputIt first,
-										   InputIt last,
-										   const Allocator& alloc = Allocator())
+						InputIt last,
+						const Allocator& alloc = Allocator())
 				{
 
 				}
 
 				void m_fill_initialize(size_type count,
-						const T& value,
-						const Allocator& alloc = Allocator())
+									   const T& value,
+									   const Allocator& alloc = Allocator())
 				{
 					m_count = count;
 					m_alloc = alloc;
@@ -133,6 +131,7 @@ namespace fl
 					m_head->m_prev = m_sentinal;
 					m_tail->m_next = m_sentinal;
 				}
+
 
 				template <bool flag_is_const, class Const, class No_const> struct type_picker {};
 				template <class Const, class No_const> struct type_picker<true, Const, No_const>
@@ -230,8 +229,56 @@ namespace fl
 				using reverse_iterator = fl::iterators::ReverseIterator<iterator>;
 				using const_reverse_iterator = fl::iterators::ReverseIterator<const_iterator>;
 
+			private:
+				void m_insert(iterator pos, const T& value)
+				{
+					node_ptr new_node = m_acquire_node();
+					m_construct_node(new_node, value);
+					new_node->m_next = pos.m_node;
+					new_node->m_prev = pos.m_node->m_prev;
+					pos.m_node->m_prev->m_next = new_node;
+					pos.m_node->m_prev = new_node;
+					m_count++;
+				}
+				void m_insert(const_iterator pos, const T& value)
+				{
+					iterator temp(pos.m_node);
+					node_ptr new_node = m_acquire_node();
+					m_construct_node(new_node, value);
+					new_node->m_next = temp.m_node;
+					new_node->m_prev = temp.m_node->m_prev;
+					temp.m_node->m_prev->m_next = new_node;
+					temp.m_node->m_prev = new_node;
+					m_count++;
+				}
+				void m_insert(iterator pos, size_type count, const T& value)
+				{
+					m_count += count;
+					node_ptr np;
+					for (int i = 0; i < (int) count; i++)
+					{
+						np = m_acquire_node();
+						m_construct_node(np, value);
+						np++;
+					}
+					np = np - count + 1;
+					for (int i = 0; i < (int) count-1; i++)
+					{
+						np[i].m_next = &np[i+1];
+						np[i+1].m_prev = &np[i];	
+					}
+					np[0].m_prev = pos.m_node->m_prev;
+					np[count-1].m_next = pos.m_node;
+					pos.m_node->m_prev->m_next = &np[0];
+					pos.m_node->m_prev = &np[count-1];
+				}
+				template <class InputIt>
+					void m_insert(iterator pos, InputIt first, InputIt last);
+
+
+			public:
 				explicit List(const Allocator& alloc = Allocator()) 
-				{ 
+				{
 					m_alloc = alloc;
 					m_count = 0;
 					m_sentinal = m_acquire_node();
@@ -274,19 +321,19 @@ namespace fl
 				}
 
 				template <class InputIterator>
-				List(InputIterator first, 
-					 InputIterator last,
-					 const Allocator& alloc = Allocator())
-				{
-					if (std::is_integral<InputIterator>::value)
+					List(InputIterator first, 
+							InputIterator last,
+							const Allocator& alloc = Allocator())
 					{
-						m_fill_initialize(first, last, alloc);
+						if (std::is_integral<InputIterator>::value)
+						{
+							m_fill_initialize(first, last, alloc);
+						}
+						else
+						{
+							m_iterator_initialize(first, last, alloc);
+						}
 					}
-					else
-					{
-						m_iterator_initialize(first, last, alloc);
-					}
-				}
 
 				List(std::initializer_list<T> init)
 				{
@@ -343,28 +390,14 @@ namespace fl
 
 				iterator insert(iterator pos, const T& value)
 				{
-					node_ptr new_node = m_acquire_node();
-					m_construct_node(new_node, value);
-					new_node->m_next = pos.m_node;
-					new_node->m_prev = pos.m_node->m_prev;
-					pos.m_node->m_prev->m_next = new_node;
-					pos.m_node->m_prev = new_node;
-
-					m_count++;
-					return iterator(new_node);
+					m_insert(pos, value);
+					return --pos;
 				}
 				iterator insert(const_iterator pos, const T& value)
 				{
-					iterator temp(pos.m_node);
-					node_ptr new_node = m_acquire_node();
-					m_construct_node(new_node, value);
-					new_node->m_next = temp.m_node;
-					new_node->m_prev = temp.m_node->m_prev;
-					temp.m_node->m_prev->m_next = new_node;
-					temp.m_node->m_prev = new_node;
-					
-					m_count++;
-					return iterator(new_node);
+					iterator temp(pos);
+					m_insert(temp, value);
+					return --temp;
 				}
 
 				iterator insert(const_iterator pos, T&& value);
@@ -373,42 +406,27 @@ namespace fl
 				{
 					if (count == 0)
 						return pos;
-
-					m_count += count;
-					node_ptr np;
-					for (int i = 0; i < (int) count; i++)
+					m_insert(pos, count, value);
+					for (int i = 0; i < count+1; i++)
 					{
-						np = m_acquire_node();
-						m_construct_node(np, value);
-						np++;
+						--pos;
 					}
-					np = np - count + 1;
-					for (int i = 0; i < (int) count-1; i++)
-					{
-						np[i].m_next = &np[i+1];
-						np[i+1].m_prev = &np[i];	
-					}
-					np[0].m_prev = pos.m_node->m_prev;
-					np[count-1].m_next = pos.m_node;
-					pos.m_node->m_prev->m_next = &np[0];
-					pos.m_node->m_prev = &np[count-1];
-
-					return iterator(np);
+					return iterator(pos.m_node);
 				}
 
 				template <class InputIt>
-				iterator insert(iterator pos, InputIt first, InputIt last)
-				{
-					if (std::is_integral<InputIt>::value)
+					iterator insert(iterator pos, InputIt first, InputIt last)
 					{
-						return insert(pos, first, last);
-					}
-					else
-					{
+						if (std::is_integral<InputIt>::value)
+						{
+							return insert(pos, first, last);
+						}
+						else
+						{
+
+						}
 
 					}
-
-				}
 
 				const alloc_type get_allocator() const { return m_alloc; }
 
@@ -422,6 +440,5 @@ namespace fl
 	}
 
 }
-
 
 #endif // List.hpp
