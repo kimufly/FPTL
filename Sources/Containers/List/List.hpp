@@ -282,12 +282,7 @@ namespace fl
 					{
 						--pos;
 					}
-
-					
-
 				}
-					
-
 
 			public:
 				explicit List(const Allocator& alloc = Allocator()) 
@@ -428,18 +423,27 @@ namespace fl
 				}
 
 				template <class InputIt>
-					iterator insert(iterator pos, InputIt first, InputIt last)
+				iterator insert(iterator pos, InputIt first, InputIt last)
+				{
+					if (std::is_integral<InputIt>::value)
 					{
-						if (std::is_integral<InputIt>::value)
-						{
-							return insert(pos, first, last);
-						}
-						else
-						{
-
-						}
+						return insert(pos, first, last);
+					}
+					else
+					{
 
 					}
+
+				}
+
+				void push_front(const T& value);
+				void push_front(T&& value);
+
+				void push_back(const T& value);
+				void push_back(T&& value);
+
+				void pop_front();
+				void pop_back();
 
 				const alloc_type get_allocator() const { return m_alloc; }
 
