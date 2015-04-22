@@ -100,6 +100,12 @@ namespace fl
 						InputIt last,
 						const Allocator& alloc = Allocator())
 				{
+					m_alloc = alloc;
+					m_count = 0;
+					for (; first != last; ++first)
+					{
+						push_back(*first);
+					}
 
 				}
 
@@ -329,27 +335,33 @@ namespace fl
 				}
 
 				template <class InputIterator>
-					List(InputIterator first, 
-							InputIterator last,
-							const Allocator& alloc = Allocator())
+				List( InputIterator first, 
+					  InputIterator last,
+					  const Allocator& alloc = Allocator())
+				{
+					if (std::is_integral<InputIterator>::value == true)
 					{
-						if (std::is_integral<InputIterator>::value)
-						{
-							m_fill_initialize(first, last, alloc);
-						}
-						else
-						{
-							m_iterator_initialize(first, last, alloc);
-						}
+						m_fill_initialize(first, last, alloc);
 					}
+					else
+					{
+						m_iterator_initialize(first, last, alloc);
+					}
+				}
 
 				List(std::initializer_list<T> init)
 				{
 					m_count = init.size();
+					iterator it = init.begin();
+					for (; it != init.end(); ++it)
+					{
+						push_back(*it);
+					}
 				}
 				~List() 
 				{
 					clear();	
+					m_destroy_node(m_sentinal);
 					m_put_node(m_sentinal);
 				}
 
@@ -425,7 +437,7 @@ namespace fl
 				template <class InputIt>
 				iterator insert(iterator pos, InputIt first, InputIt last)
 				{
-					if (std::is_integral<InputIt>::value)
+					if (std::is_integral<InputIt>::value == true)
 					{
 						return insert(pos, first, last);
 					}
@@ -436,14 +448,105 @@ namespace fl
 
 				}
 
-				void push_front(const T& value);
-				void push_front(T&& value);
+				void push_front(const T& value)
+				{
+					node_ptr new_node = m_acquire_node();
+					m_construct_node(new_node, value);
+					if (m_count == 0 && m_head == m_tail)
+					{
+						m_head = new_node;
+						m_tail = new_node;
+						m_head->m_prev = m_sentinal;
+						m_tail->m_next = m_sentinal;
+					}
+					else
+					{
+						m_head->m_prev = new_node;
+						new_node->m_next = m_head;
+						new_node->m_prev = m_sentinal;
+						m_head = new_node;
+					}
+					m_count++;
 
-				void push_back(const T& value);
-				void push_back(T&& value);
+				}
+				void push_front(T&& value)
+				{
+					node_ptr new_node = m_acquire_node();
+					m_construct_node(new_node, value);
+					if (m_count == 0 && m_head == m_tail)
+					{
+						m_head = new_node;
+						m_tail = new_node;
+						m_head->m_prev = m_sentinal;
+						m_tail->m_next = m_sentinal;
+					}
+					else
+					{
+						m_head->m_prev = new_node;
+						new_node->m_next = m_head;
+						new_node->m_prev = m_sentinal;
+						m_head = new_node;
+					}
+					m_count++;
+				}
 
-				void pop_front();
-				void pop_back();
+				void push_back(const T& value)
+				{
+					node_ptr new_node = m_acquire_node();
+					m_construct_node(new_node, value);
+					if (m_count == 0 && m_head == m_tail)
+					{
+						m_head = new_node;
+						m_tail = new_node;
+						m_head->m_prev = m_sentinal;
+						m_tail->m_next = m_sentinal;
+					}
+					else
+					{
+						new_node->m_prev = m_tail;
+						new_node->m_next = m_sentinal;
+						m_tail->m_next = new_node;
+						m_tail = new_node;
+					}
+					m_count++;
+				}
+				void push_back(T&& value)
+				{
+					node_ptr new_node = m_acquire_node();
+					m_construct_node(new_node, value);
+					if (m_count == 0 && m_head == m_tail)
+					{
+						m_head = new_node;
+						m_tail = new_node;
+						m_head->m_prev = m_sentinal;
+						m_tail->m_next = m_sentinal;
+					}
+					else
+					{
+						new_node->m_prev = m_tail;
+						new_node->m_next = m_sentinal;
+						m_tail->m_next = new_node;
+						m_tail = new_node;
+					}
+					m_count++;
+				}
+
+				void pop_front()
+				{
+					node_ptr new_head = m_head->m_next;
+					new_head->m_prev = m_sentinal;
+					m_destroy_node(m_head);
+					m_put_node(m_head);
+					m_head = new_head;
+				}
+				void pop_back()
+				{
+					node_ptr new_tail = m_tail->m_prev;
+					new_tail->m_next = m_sentinal;
+					m_destroy_node(m_tail);
+					m_put_node(m_tail);
+					m_tail = new_tail;
+				}
 
 				const alloc_type get_allocator() const { return m_alloc; }
 
