@@ -95,6 +95,13 @@ namespace fl
 					node = nullptr;
 				}
 
+				template <class InputIt, class TrueType>
+				m_initilize_dispatch(InputIt first, InputIt last, const Allocator& alloc = Allocator())
+				{
+
+				}
+
+
 				template <class InputIt>
 				void m_iterator_initialize(InputIt first,
 						InputIt last,
