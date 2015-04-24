@@ -272,6 +272,12 @@ namespace fl
 				template <class InputIt>
 				void m_insert(iterator pos, InputIt first, InputIt last, std::false_type)
 				{
+					first.m_node->m_prev = pos.m_node->m_prev;
+					last.m_node->m_prev->m_next = pos.m_node;
+
+					pos.m_node->m_prev->m_next = first.m_node;
+					pos.m_node->m_prev = last.m_node->m_prev;
+
 				}
 
 			public:
