@@ -270,11 +270,8 @@ namespace fl
 				}
 
 				template <class InputIt>
-				void m_insert(iterator pos, InputIt first, InputIt last)
+				void m_insert(iterator pos, InputIt first, InputIt last, std::false_type)
 				{
-					for (; first != last; ++first)
-					{
-					}
 				}
 
 			public:
@@ -397,22 +394,11 @@ namespace fl
 
 				iterator insert(const_iterator pos, T&& value);
 
-				iterator insert(iterator pos, size_type count, const T& value) 
-				{
-					if (count == 0)
-						return pos;
-					m_insert(pos, count, value);
-					for (int i = 0; i < (int) count+1; i++)
-					{
-						--pos;
-					}
-					return iterator(pos.m_node);
-				}
-
 				template <class InputIt>
 				iterator insert(iterator pos, InputIt first, InputIt last)
 				{
-
+					using Integer = typename std::is_integral<InputIt>::type;
+					m_insert(pos, first, last, Integer());
 				}
 
 				void push_front(const T& value)
