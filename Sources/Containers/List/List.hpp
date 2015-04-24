@@ -23,7 +23,6 @@ namespace fl
 			{
 				m_next = other.m_next;
 				m_prev = other.m_prev;
-
 				return *this;
 			}
 			virtual ~Node_base() {}
@@ -94,57 +93,28 @@ namespace fl
 					dealloc.deallocate(node, 1);
 					node = nullptr;
 				}
-
-				template <class InputIt, class TrueType>
-				m_initilize_dispatch(InputIt first, InputIt last, const Allocator& alloc = Allocator())
+				template <class Integer>
+				void m_initilize_dispatch(Integer count, Integer& value, std::true_type)
 				{
-
+					m_fill_initialize(static_cast<size_type>(count), static_cast<value_type>(value));
 				}
 
-
 				template <class InputIt>
-				void m_iterator_initialize(InputIt first,
-						InputIt last,
-						const Allocator& alloc = Allocator())
+				void m_initilize_dispatch(InputIt first, InputIt last, std::false_type)
 				{
-					m_alloc = alloc;
-					m_count = 0;
 					for (; first != last; ++first)
 					{
 						push_back(*first);
 					}
-
 				}
 
-				void m_fill_initialize(size_type count,
-									   const T& value,
-									   const Allocator& alloc = Allocator())
+				void m_fill_initialize(size_type count, const T& value)
 				{
-					m_count = count;
-					m_alloc = alloc;
-					m_sentinal = m_acquire_node();
-					m_construct_node(m_sentinal, 0);
-					node_ptr np;
 					for (int i = 0; i < (int) count; i++)
 					{
-						np = m_acquire_node();
-						m_construct_node(np, value);
-						np++;
+						push_back(value);
 					}
-					np = np - count + 1;
-					for (int i = 0; i < (int) count-1; i++)
-					{
-						np[i].m_next = &np[i+1];
-						np[i+1].m_prev = &np[i];
-					}
-
-					m_head = np;
-					m_tail = &np[count-1];
-
-					m_head->m_prev = m_sentinal;
-					m_tail->m_next = m_sentinal;
 				}
-
 
 				template <bool flag_is_const, class Const, class No_const> struct type_picker {};
 				template <class Const, class No_const> struct type_picker<true, Const, No_const>
@@ -242,58 +212,68 @@ namespace fl
 				using reverse_iterator = fl::iterators::ReverseIterator<iterator>;
 				using const_reverse_iterator = fl::iterators::ReverseIterator<const_iterator>;
 
-			private:
+			protected:
 				void m_insert(iterator pos, const T& value)
 				{
-					node_ptr new_node = m_acquire_node();
-					m_construct_node(new_node, value);
-					new_node->m_next = pos.m_node;
-					new_node->m_prev = pos.m_node->m_prev;
-					pos.m_node->m_prev->m_next = new_node;
-					pos.m_node->m_prev = new_node;
-					m_count++;
+					if (pos.m_node == m_head)
+					{
+						push_front(value);
+					}
+					else
+					{
+						node_ptr new_node = m_acquire_node();
+						m_construct_node(new_node, value);
+						new_node->m_next = pos.m_node;
+						new_node->m_prev = pos.m_node->m_prev;
+						pos.m_node->m_prev->m_next = new_node;
+						pos.m_node->m_prev = new_node;
+						if (pos.m_node == m_tail)
+							m_tail = new_node;
+						m_count++;
+					}
 				}
 				void m_insert(const_iterator pos, const T& value)
 				{
-					iterator temp(pos.m_node);
-					node_ptr new_node = m_acquire_node();
-					m_construct_node(new_node, value);
-					new_node->m_next = temp.m_node;
-					new_node->m_prev = temp.m_node->m_prev;
-					temp.m_node->m_prev->m_next = new_node;
-					temp.m_node->m_prev = new_node;
-					m_count++;
+					if (pos.m_node == m_head)
+					{
+						push_front(value);
+					}
+					else
+					{
+						iterator temp(pos.m_node);
+						node_ptr new_node = m_acquire_node();
+						m_construct_node(new_node, value);
+						new_node->m_next = temp.m_node;
+						new_node->m_prev = temp.m_node->m_prev;
+						temp.m_node->m_prev->m_next = new_node;
+						temp.m_node->m_prev = new_node;
+						if (temp.m_node == m_tail)
+							m_tail = new_node;
+						m_count++;
+					}
 				}
-				void m_insert(iterator pos, size_type count, const T& value)
+
+				void m_fill_insert(iterator pos, size_type count, const T& value)
 				{
-					m_count += count;
-					node_ptr np;
+					iterator temp(pos.m_node);
 					for (int i = 0; i < (int) count; i++)
 					{
-						np = m_acquire_node();
-						m_construct_node(np, value);
-						np++;
+						m_insert(temp, value);
+						--temp;
 					}
-					np = np - count + 1;
-					for (int i = 0; i < (int) count-1; i++)
-					{
-						np[i].m_next = &np[i+1];
-						np[i+1].m_prev = &np[i];	
-					}
-					np[0].m_prev = pos.m_node->m_prev;
-					np[count-1].m_next = pos.m_node;
-					pos.m_node->m_prev->m_next = &np[0];
-					pos.m_node->m_prev = &np[count-1];
 				}
+
+				template <class Integer>
+				void m_insert(iterator pos, Integer count, Integer value, std::true_type)
+				{
+					m_fill_insert(pos, static_cast<size_type>(count), static_cast<value_type>(value));
+				}
+
 				template <class InputIt>
 				void m_insert(iterator pos, InputIt first, InputIt last)
 				{
-
-					pos.m_node->m_prev = last.m_node->m_prev;
-					
-					for (InputIt it = first; it != last; ++it)
+					for (; first != last; ++first)
 					{
-						--pos;
 					}
 				}
 
@@ -306,13 +286,6 @@ namespace fl
 					m_construct_node(m_sentinal, 0);
 					m_head = m_sentinal;
 					m_tail = m_sentinal;
-				}
-
-				List( size_type count, 
-						const T& value, 
-						const Allocator& alloc = Allocator() )
-				{
-					m_fill_initialize(count, value, alloc);
 				}
 
 				List(List&& other)
@@ -338,7 +311,7 @@ namespace fl
 					other.m_sentinal = nullptr;
 
 					m_count = std::move(other.m_count);
-					m_alloc = std::move(alloc);
+					m_alloc = alloc;
 				}
 
 				template <class InputIterator>
@@ -346,14 +319,9 @@ namespace fl
 					  InputIterator last,
 					  const Allocator& alloc = Allocator())
 				{
-					if (std::is_integral<InputIterator>::value == true)
-					{
-						m_fill_initialize(first, last, alloc);
-					}
-					else
-					{
-						m_iterator_initialize(first, last, alloc);
-					}
+					using Integral = typename std::is_integral<InputIterator>::type;	
+					m_alloc = alloc;
+					m_initilize_dispatch(first, last, Integral());
 				}
 
 				List(std::initializer_list<T> init)
@@ -434,7 +402,7 @@ namespace fl
 					if (count == 0)
 						return pos;
 					m_insert(pos, count, value);
-					for (int i = 0; i < count+1; i++)
+					for (int i = 0; i < (int) count+1; i++)
 					{
 						--pos;
 					}
@@ -444,14 +412,6 @@ namespace fl
 				template <class InputIt>
 				iterator insert(iterator pos, InputIt first, InputIt last)
 				{
-					if (std::is_integral<InputIt>::value == true)
-					{
-						return insert(pos, first, last);
-					}
-					else
-					{
-
-					}
 
 				}
 
@@ -479,7 +439,7 @@ namespace fl
 				void push_front(T&& value)
 				{
 					node_ptr new_node = m_acquire_node();
-					m_construct_node(new_node, value);
+					m_construct_node(new_node, std::move(value));
 					if (m_count == 0 && m_head == m_tail)
 					{
 						m_head = new_node;
@@ -520,7 +480,7 @@ namespace fl
 				void push_back(T&& value)
 				{
 					node_ptr new_node = m_acquire_node();
-					m_construct_node(new_node, value);
+					m_construct_node(new_node, std::move(value));
 					if (m_count == 0 && m_head == m_tail)
 					{
 						m_head = new_node;
