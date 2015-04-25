@@ -117,18 +117,17 @@ namespace fl
 				}
 
 				template <bool flag_is_const, class Const, class No_const> struct type_picker {};
-				template <class Const, class No_const> struct type_picker<true, Const, No_const>
+				template <class Const, class Non_const> struct type_picker<true, Const, Non_const>
 				{
 					using type = Const;
 				};
 
-				template <class Const, class No_const> struct type_picker<false, Const, No_const>
+				template <class Const, class Non_const> struct type_picker<false, Const, Non_const>
 				{
-					using type = No_const;
+					using type = Non_const;
 				};
 				template <class U, bool is_const = false> struct Iterator
 				{
-
 					using iterator_category = fl::iterators::BidirectionalIteratorTag;
 					using value_type = typename type_picker<is_const, const U, U>::type;
 					using difference_type = std::ptrdiff_t;
@@ -270,13 +269,15 @@ namespace fl
 				}
 
 				template <class InputIt>
-				void m_insert(iterator pos, InputIt first, InputIt last, std::false_type)
+				void m_insert(const_iterator pos, InputIt first, InputIt last, std::false_type)
 				{
-					first.m_node->m_prev = pos.m_node->m_prev;
-					last.m_node->m_prev->m_next = pos.m_node;
+					iterator temp(pos.m_node);
 
-					pos.m_node->m_prev->m_next = first.m_node;
-					pos.m_node->m_prev = last.m_node->m_prev;
+					for (; first != last; ++first)
+					{
+						m_insert(temp, *first);
+						++temp;
+					}
 
 				}
 
@@ -401,10 +402,16 @@ namespace fl
 				iterator insert(const_iterator pos, T&& value);
 
 				template <class InputIt>
-				iterator insert(iterator pos, InputIt first, InputIt last)
+				iterator insert(const_iterator pos, InputIt first, InputIt last)
 				{
 					using Integer = typename std::is_integral<InputIt>::type;
 					m_insert(pos, first, last, Integer());
+					iterator temp(pos.m_node);
+					for (; first != last; ++first)
+					{
+						--temp;
+					}
+					return temp;
 				}
 
 				void push_front(const T& value)
