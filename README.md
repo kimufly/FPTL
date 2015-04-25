@@ -1,6 +1,6 @@
 <h1>FPTL : Feng Pan's Template Library<h1>
 <div><p>This is an custom implementation of STL library of C++. </p><br>
-<p>It is still under development.</p><br>
+<p>It is still under the stage of early development and is <b>really not ready to use.</b></p><br>
 <p>To use the library:</p><br>
 <p>1. Download the library.</p><br>
 <p>2. Place it in your project root directory.</p><br>
