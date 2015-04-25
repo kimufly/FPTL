@@ -40,9 +40,7 @@ namespace fl
 		};
 
 
-		template <
-				   class T, 
-				   class Allocator = std::allocator<T> >
+		template < class T, class Allocator = std::allocator<T> >
 		class List
 		{
 			public:
@@ -114,6 +112,17 @@ namespace fl
 					{
 						push_back(value);
 					}
+				}
+
+				template <class Integer>
+				void m_assign_dispatch(Integer count, Integer& value, std::true_type)
+				{
+
+				}
+
+				template <class InputIt>
+				void m_assign_dispatch(InputIt first, InputIt last, std::false_type)
+				{
 				}
 
 				template <bool flag_is_const, class Const, class No_const> struct type_picker {};
@@ -218,6 +227,10 @@ namespace fl
 					{
 						push_front(value);
 					}
+					else if (pos == end())
+					{
+						push_back(value);
+					}
 					else
 					{
 						node_ptr new_node = m_acquire_node();
@@ -227,7 +240,11 @@ namespace fl
 						pos.m_node->m_prev->m_next = new_node;
 						pos.m_node->m_prev = new_node;
 						if (pos.m_node == m_tail)
+						{
 							m_tail = new_node;
+							m_tail->m_next = m_sentinal;
+							m_sentinal->m_prev = m_tail;
+						}
 						m_count++;
 					}
 				}
@@ -236,6 +253,10 @@ namespace fl
 					if (pos.m_node == m_head)
 					{
 						push_front(value);
+					}
+					else if (pos == end())
+					{
+						push_back(value);
 					}
 					else
 					{
@@ -247,8 +268,13 @@ namespace fl
 						temp.m_node->m_prev->m_next = new_node;
 						temp.m_node->m_prev = new_node;
 						if (temp.m_node == m_tail)
+						{
 							m_tail = new_node;
+							m_tail->m_next = m_sentinal;
+							m_sentinal->m_prev = m_tail;
+						}
 						m_count++;
+
 					}
 				}
 
@@ -278,7 +304,6 @@ namespace fl
 						m_insert(temp, *first);
 						++temp;
 					}
-
 				}
 
 			public:
@@ -292,30 +317,46 @@ namespace fl
 					m_tail = m_sentinal;
 				}
 
+				List(const List& other)
+				{
+					m_alloc = std::allocator_traits<alloc_type>::select_on_container_copy_constructor(other.get_allocator());
+					m_initilize_dispatch(other.begin(), other.end(), std::false_type());
+					m_count = other.m_count;
+				}
+
+				List(const List& other, const Allocator& alloc)
+				{
+					m_alloc = alloc;
+					m_initilize_dispatch(other.begin(), other.end(), std::false_type());
+					m_count = other.m_count;
+				}
+
 				List(List&& other)
 				{
-					m_head = other.m_head;
-					m_tail = other.m_tail;
-					m_sentinal = other.m_sentinal;
-
+					m_initilize_dispatch(other.begin(), other.end(), std::false_type());
+					for (auto it = other.begin(); it != other.end(); ++it)
+					{
+						it.m_node = nullptr;
+						
+					}
 					other.m_head = nullptr;
 					other.m_tail = nullptr;
-					other.m_sentinal = nullptr;
-
 					m_count = std::move(other.m_count);
+					m_alloc = std::move(other.get_allocator());
+
 				}
+
 				List(List&& other, const Allocator& alloc)
 				{
-					m_head = other.m_head;
-					m_tail = other.m_tail;
-					m_sentinal = other.m_sentinal;
-
+					m_alloc = std::move(alloc);
+					m_count = std::move(other.m_count);
+					m_initilize_dispatch(other.begin(), other.end(), std::false_type());
+					for (auto it = other.begin(); it != other.end(); ++it)
+					{
+						it.m_node = nullptr;
+					}
 					other.m_head = nullptr;
 					other.m_tail = nullptr;
-					other.m_sentinal = nullptr;
-
-					m_count = std::move(other.m_count);
-					m_alloc = alloc;
 				}
 
 				template <class InputIterator>
@@ -325,14 +366,23 @@ namespace fl
 				{
 					using Integral = typename std::is_integral<InputIterator>::type;	
 					m_alloc = alloc;
+					m_sentinal = m_acquire_node();
+					m_construct_node(m_sentinal, 0);
+					m_head = m_sentinal;
+					m_tail = m_sentinal;
+					m_count = 0;
 					m_initilize_dispatch(first, last, Integral());
 				}
 
-				List(std::initializer_list<T> init)
+				List(std::initializer_list<T> init, const Allocator& alloc = Allocator())
 				{
+					m_alloc = alloc;
 					m_count = init.size();
-					iterator it = init.begin();
-					for (; it != init.end(); ++it)
+					m_sentinal = m_acquire_node();
+					m_construct_node(m_sentinal, 0);
+					m_head = m_sentinal;
+					m_tail = m_sentinal;
+					for (auto it = init.begin(); it != init.end(); ++it)
 					{
 						push_back(*it);
 					}
@@ -343,6 +393,25 @@ namespace fl
 					m_destroy_node(m_sentinal);
 					m_put_node(m_sentinal);
 				}
+
+				List& operator=(const List& other)
+				{
+					assign(other.begin(), other.end());
+				}
+				List& operator=(List&& other)
+				{
+					assign(other.begin(), other.end());
+				}
+				List& operator=(std::initializer_list<T>& ilist);
+
+				template <class InputIt>
+				void assign(InputIt first, InputIt last)
+				{
+					using Integer = typename std::is_integral<InputIt>::type;
+					m_assign_dispatch(first, last, Integer());
+				}
+
+				void assign(std::initializer_list<T> ilist);
 
 				iterator begin() { return m_head; }
 				iterator begin() const { return m_head; }
@@ -378,8 +447,11 @@ namespace fl
 					while (current != m_sentinal)
 					{
 						node_ptr temp = current;
-						m_destroy_node(temp);
-						m_put_node(temp);
+						if (current)
+						{
+							m_destroy_node(temp);
+							m_put_node(temp);
+						}
 						current = dynamic_cast<node_ptr>(current->m_next);
 					}
 					current = nullptr;
@@ -394,12 +466,17 @@ namespace fl
 				}
 				iterator insert(const_iterator pos, const T& value)
 				{
-					iterator temp(pos);
+					iterator temp(pos.m_node);
 					m_insert(temp, value);
 					return --temp;
 				}
 
-				iterator insert(const_iterator pos, T&& value);
+				iterator insert(const_iterator pos, T&& value)
+				{
+					iterator temp(pos.m_node);
+					m_insert(temp, std::move(value));
+					return --temp;
+				}
 
 				template <class InputIt>
 				iterator insert(const_iterator pos, InputIt first, InputIt last)
@@ -432,6 +509,8 @@ namespace fl
 						new_node->m_prev = m_sentinal;
 						m_head = new_node;
 					}
+					m_sentinal->m_prev = m_tail;
+					m_sentinal->m_next = m_head;
 					m_count++;
 
 				}
@@ -453,6 +532,8 @@ namespace fl
 						new_node->m_prev = m_sentinal;
 						m_head = new_node;
 					}
+					m_sentinal->m_prev = m_tail;
+					m_sentinal->m_next = m_head;
 					m_count++;
 				}
 
@@ -462,10 +543,10 @@ namespace fl
 					m_construct_node(new_node, value);
 					if (m_count == 0 && m_head == m_tail)
 					{
+						new_node->m_next = m_sentinal;
+						new_node->m_prev = m_sentinal;
 						m_head = new_node;
 						m_tail = new_node;
-						m_head->m_prev = m_sentinal;
-						m_tail->m_next = m_sentinal;
 					}
 					else
 					{
@@ -474,6 +555,8 @@ namespace fl
 						m_tail->m_next = new_node;
 						m_tail = new_node;
 					}
+					m_sentinal->m_prev = m_tail;
+					m_sentinal->m_next = m_head;
 					m_count++;
 				}
 				void push_back(T&& value)
@@ -482,10 +565,10 @@ namespace fl
 					m_construct_node(new_node, std::move(value));
 					if (m_count == 0 && m_head == m_tail)
 					{
+						new_node->m_next = m_sentinal;
+						new_node->m_prev = m_sentinal;
 						m_head = new_node;
 						m_tail = new_node;
-						m_head->m_prev = m_sentinal;
-						m_tail->m_next = m_sentinal;
 					}
 					else
 					{
@@ -494,6 +577,8 @@ namespace fl
 						m_tail->m_next = new_node;
 						m_tail = new_node;
 					}
+					m_sentinal->m_prev = m_tail;
+					m_sentinal->m_next = m_head;
 					m_count++;
 				}
 
@@ -501,20 +586,26 @@ namespace fl
 				{
 					node_ptr new_head = m_head->m_next;
 					new_head->m_prev = m_sentinal;
-					m_destroy_node(m_head);
-					m_put_node(m_head);
+					if (m_head)
+					{
+						m_destroy_node(m_head);
+						m_put_node(m_head);
+					}
 					m_head = new_head;
 				}
 				void pop_back()
 				{
 					node_ptr new_tail = m_tail->m_prev;
 					new_tail->m_next = m_sentinal;
-					m_destroy_node(m_tail);
-					m_put_node(m_tail);
+					if (m_tail)
+					{
+						m_destroy_node(m_tail);
+						m_put_node(m_tail);
+					}
 					m_tail = new_tail;
 				}
 
-				const alloc_type get_allocator() const { return m_alloc; }
+				alloc_type get_allocator() const { return m_alloc; }
 
 			private:
 				node_ptr m_head;
