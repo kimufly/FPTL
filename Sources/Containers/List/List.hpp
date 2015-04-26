@@ -114,16 +114,6 @@ namespace fl
 					}
 				}
 
-				template <class Integer>
-				void m_assign_dispatch(Integer count, Integer& value, std::true_type)
-				{
-
-				}
-
-				template <class InputIt>
-				void m_assign_dispatch(InputIt first, InputIt last, std::false_type)
-				{
-				}
 
 				template <bool flag_is_const, class Const, class No_const> struct type_picker {};
 				template <class Const, class Non_const> struct type_picker<true, Const, Non_const>
@@ -183,26 +173,6 @@ namespace fl
 						return it;
 					}
 
-					Iterator operator-(int n) const
-					{
-						node_ptr tmp = this->m_node;
-						for (int i = 0 ; i < n; i++)
-						{
-							tmp = tmp->m_prev;
-						}
-						return Iterator(tmp);
-					}
-
-					Iterator operator+(int n) const
-					{
-						node_ptr tmp = this->m_node;
-						for (int i = 0 ; i < n; i++)
-						{
-							tmp = tmp->m_next;
-						}
-						return Iterator(tmp);
-					}
-
 					bool operator==(const Iterator& rhs)
 					{
 						return this->m_node == rhs.m_node;
@@ -221,6 +191,23 @@ namespace fl
 				using const_reverse_iterator = fl::iterators::ReverseIterator<const_iterator>;
 
 			protected:
+				void m_fill_assign(size_type count, const T& value)
+				{
+					clear();
+					m_initilize_dispatch(count, value, std::true_type());
+				}
+				template <class Integer>
+				void m_assign_dispatch(Integer count, Integer& value, std::true_type)
+				{
+					m_fill_assign(static_cast<size_type>(count), static_cast<value_type>(value));
+				}
+
+				template <class InputIt>
+				void m_assign_dispatch(InputIt first, InputIt last, std::false_type)
+				{
+					clear();
+					m_initilize_dispatch(first, last, std::false_type());
+				}
 				void m_insert(iterator pos, const T& value)
 				{
 					if (pos.m_node == m_head)
@@ -289,13 +276,13 @@ namespace fl
 				}
 
 				template <class Integer>
-				void m_insert(iterator pos, Integer count, Integer value, std::true_type)
+				void m_insert_dispatch(iterator pos, Integer count, Integer value, std::true_type)
 				{
 					m_fill_insert(pos, static_cast<size_type>(count), static_cast<value_type>(value));
 				}
 
 				template <class InputIt>
-				void m_insert(const_iterator pos, InputIt first, InputIt last, std::false_type)
+				void m_insert_dispatch(const_iterator pos, InputIt first, InputIt last, std::false_type)
 				{
 					iterator temp(pos.m_node);
 
@@ -337,7 +324,6 @@ namespace fl
 					for (auto it = other.begin(); it != other.end(); ++it)
 					{
 						it.m_node = nullptr;
-						
 					}
 					other.m_head = nullptr;
 					other.m_tail = nullptr;
@@ -482,7 +468,7 @@ namespace fl
 				iterator insert(const_iterator pos, InputIt first, InputIt last)
 				{
 					using Integer = typename std::is_integral<InputIt>::type;
-					m_insert(pos, first, last, Integer());
+					m_insert_dispatch(pos, first, last, Integer());
 					iterator temp(pos.m_node);
 					for (; first != last; ++first)
 					{
