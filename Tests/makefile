@@ -1,8 +1,8 @@
 
 TARGET = test_list
 
-CXX = clang++
-CXXFLAGS = -std=c++11 -ggdb -pthread -Wall -Wextra -pedantic -fno-elide-constructors
+CXX = g++-4.9
+CXXFLAGS = -std=c++14 -ggdb -pthread -Wall -Wextra -pedantic -fno-elide-constructors
 
 all : $(TARGET)
 

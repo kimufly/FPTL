@@ -46,22 +46,29 @@ int main()
 
 	std::cout << "Testing insertion: \n";
 	std::cout << "Single insert: \n";
-	auto ret = lst2.insert(lst2.end(), 4);
-	std::cout << "Value inserted: " << *ret << std::endl;
-	ret = lst2.insert(lst2.end(), 5);
-	std::cout << "Value inserted: " << *ret << std::endl;
+	lst2.insert(lst2.end(), 4);
+	lst2.insert(lst2.end(), 5);
 	it = lst2.begin();
 	for (; it != lst2.end(); ++it)
 		std::cout << *it << " ";
 	std::cout << std::endl;
 
 	std::cout << "Copy insert: \n";
-	ret = lst2.insert(lst2.cend(), 5, 6);
+	lst2.insert(lst2.cend(), 5, 6);
 	it = lst2.begin();
 	for (; it != lst2.end(); ++it)
 		std::cout << *it << " ";
 	std::cout << std::endl;
 
+	std::cout << "Testing emplacement:\n";
+	lst2.clear();
+	lst2.emplace_front(3);
+	lst2.emplace_back(4);
+	
+	for (; it != lst2.end(); ++it)
+		std::cout << *it << " ";
+	std::cout << std::endl;
+/*	
 	std::cout << "Testing assignment:\n";
 	std::cout << "lst4 = lst2\n";
 	lst4 = lst2;
@@ -73,7 +80,7 @@ int main()
 	std::cout << "Testing erase functions: \n";
 	cit = lst4.cend();
 	--cit;
-	ret = lst4.erase(cit);
+	lst4.erase(cit);
 	std::cout << "Last element deleted.\n";
 
 	for (it = lst4.begin(); it != lst4.end(); ++it)
@@ -86,7 +93,7 @@ int main()
 	++itbegin;
 	--itend;
 
-	ret = lst4.erase(itbegin, itend);
+	lst4.erase(itbegin, itend);
 
 	for (it = lst4.begin(); it != lst4.end(); ++it)
 		std::cout << *it << " ";
@@ -112,7 +119,7 @@ int main()
 		std::cout << "List cleared.\n";
 	for (auto &e : lst5)
 		std::cout << e << " ";
-	std::cout <<std::endl;
+	std::cout << std::endl;
 
 	std::cout << "Testing push back and push front: \n";
 	std::cout << "Pushing 5 at the back\n";
@@ -135,17 +142,27 @@ int main()
 	std::cout << "lst6 has " << lst6.size() << " elements of value " << *lst6.begin() << std::endl;
 
 	std::cout << "Testing resize:\n";
-	std::cout << "lst6 after resize: \n";
+	std::cout << "Size of lst6 after resize: \n";
 	lst6.resize(5);
-	for (auto &e: lst6)
+	std::cout << lst6.size() << std::endl;
+	for (auto &e : lst6)
+		std::cout << e << " ";
+	std::cout << std::endl;
+	lst6.resize(10);
+	std::cout << "Size of lst6 after resize: \n";
+	std::cout << lst6.size() << std::endl;
+	for (auto &e : lst6)
+		std::cout << e << " ";
+	std::cout << std::endl;
+	lst6.resize(20, 5);
+	std::cout << "Size of lst6 after resize: \n";
+	std::cout << lst6.size() << std::endl;
+	for (auto &e : lst6)
 		std::cout << e << " ";
 	std::cout << std::endl;
 
-	lst6.resize(10);
-	for (auto &e: lst6)
-		std::cout << e << " ";
-	std::cout << std::endl;
-	std::cout << lst6.size() << std::endl;
+	std::cout << "Testing max size: \n";
+	std::cout << lst6.max_size() << std::endl;
 
 	std::cout << "Testing operators\n";
 	ftd::List<char> lst7{'a', 'b', 'c', 'd'};
@@ -186,5 +203,6 @@ int main()
 	std::cout << "lst7 >= lst9? " << std::boolalpha << greaterequal << std::endl;
 	std::cout << "lst9 < lst10? " << std::boolalpha << less2 << std::endl;
 	std::cout << "lst10 > lst9? " << std::boolalpha << greater2 << std::endl;
+	*/
 	return 0;
 }

@@ -142,6 +142,13 @@ namespace fl
 					m_node_alloc.construct(node, value);
 				}
 
+				template <class ...Args>
+				void m_construct_node(node_ptr node, Args&&... args)
+				{
+					typename decltype(m_alloc)::template rebind<node_type>::other m_node_alloc;
+					m_node_alloc.construct(node, std::forward<Args>(args)...);
+				}
+
 				void m_destroy_node(node_ptr node)
 				{
 					typename decltype(m_alloc)::template rebind<node_type>::other m_node_alloc;
@@ -281,6 +288,48 @@ namespace fl
 					{
 						m_insert(pos, *first);
 					}
+				}
+
+				template <class ...Args>
+				void m_insert(const_iterator pos, Args&&... args)
+				{
+
+					node_ptr new_node = m_acquire_node();
+					m_construct_node(new_node, std::forward<Args>(args)...);
+					
+					if (m_count == 0)
+					{
+						m_head = new_node;
+						m_tail = new_node;
+						m_head->m_prev = m_sentinal;
+						m_tail->m_next = m_sentinal;
+						m_sentinal->m_prev = m_tail;
+						m_sentinal->m_next = m_head;
+					}
+					else
+					{
+						if (pos == cbegin())
+						{
+							m_head = new_node;
+							m_head->m_prev = m_sentinal;
+							m_sentinal->m_next = m_head;
+						}
+						if (pos == cend())
+						{
+							m_tail = new_node;
+							m_tail->m_next = m_sentinal;
+							m_sentinal->m_prev = m_tail;
+						}
+
+						new_node->m_prev = pos.m_node->m_prev;
+						new_node->m_next = pos.m_node;
+
+						pos.m_node->m_prev = new_node;
+						new_node->m_prev->m_next = new_node;
+					}
+					
+					m_count++;
+
 				}
 
 				void m_erase(const_iterator pos)
@@ -438,10 +487,10 @@ namespace fl
 				reverse_iterator rend() const { return reverse_iterator(begin()); }
 				const_reverse_iterator rcend() const { return const_reverse_iterator(cbegin()); }
 
-				const_reference front() const { return m_head->m_data; }
-				reference front() { return m_head->m_data; }
-				const_reference back() const { return m_tail->m_data; }
-				reference back() { return m_tail->m_data; }
+				const_reference front() const { return *cbegin(); }
+				reference front() { return *begin(); }
+				const_reference back() const { return *(--cend()); }
+				reference back() { return *(--end()); }
 
 				bool empty()
 				{
@@ -454,26 +503,43 @@ namespace fl
 
 				void resize(size_type count)
 				{
+					int iteration = ((int) m_count - (int) count) >= 0 ? m_count - count : count - m_count;
 					if (count == 0)
 						this->clear();
 
-					if (m_count > count)
+					if (size() > count)
 					{
-						for (int i = 0; i < (int) m_count - (int) count; i++)
+						for (int i = 0; i < iteration; i++)
 						{
 							pop_back();
 						}
-						m_count = count;
 					}
-					if (m_count < count)
+					if (size() < count)
 					{
-						for (int i = 0; i < (int) count - (int) m_count; i++)
+						for (int i = 0; i < iteration; i++)
 							push_back(0);
-
-						m_count = count;
 					}
 				}
-				void resize(size_type count, const value_type& value);
+				void resize(size_type count, const value_type& value)
+				{
+					int iteration = ((int) m_count - (int) count) >= 0 ? m_count - count : count - m_count;
+					if (count == 0)
+						this->clear();
+
+					if (size() > count)
+					{
+						for (int i = 0; i < iteration; i++)
+						{
+							pop_back();
+						}
+					}
+					if (size() < count)
+					{
+						for (int i = 0; i < iteration; i++)
+							push_back(value);
+					}
+
+				}
 
 				void clear()
 				{
@@ -523,6 +589,26 @@ namespace fl
 					iterator ret(dynamic_cast<node_ptr>(pos.m_node->m_prev));
 					m_insert_dispatch(pos, first, last, Integer());
 					return ++ret;
+				}
+
+				template <class ...Args>
+				iterator emplace(const_iterator pos, Args&&... args)
+				{
+					m_insert(pos, std::forward<Args>(args)...);
+					iterator ret(pos.m_node);
+					return --ret;
+				}
+
+				template <class ...Args>
+				void emplace_back(Args&&... args)
+				{
+					m_insert(cend(), std::forward<Args>(args)...);
+				}
+
+				template <class ...Args>
+				void emplace_front(Args&&... args)
+				{
+					m_insert(cbegin(), std::forward<Args>(args)...);
 				}
 
 				iterator erase(const_iterator pos)
@@ -644,6 +730,7 @@ namespace fl
 						m_put_node(m_head);
 					}
 					m_head = new_head;
+					m_count--;
 				}
 				void pop_back()
 				{
@@ -655,6 +742,7 @@ namespace fl
 						m_put_node(m_tail);
 					}
 					m_tail = new_tail;
+					m_count--;
 				}
 
 				alloc_type get_allocator() const { return m_alloc; }
