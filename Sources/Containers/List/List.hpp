@@ -60,6 +60,18 @@ namespace fl
 			Iterator(const Iterator& other) : m_node(other.m_node) {}
 			~Iterator() {}
 
+			Iterator& operator=(const Iterator& other)
+			{
+				this->m_node = other.m_node;
+				return *this;
+			}
+
+			Iterator& operator=(Iterator&& other)
+			{
+				this->m_node = other.m_node;
+				other.m_node = nullptr;
+				return *this;
+			}
 			reference operator*() const
 			{
 				return m_node->m_data;
@@ -136,10 +148,16 @@ namespace fl
 					}
 				}
 
-				void m_construct_node(node_ptr node, const_reference value)
+				void m_construct_node(node_ptr node, const T& value)
 				{
 					typename decltype(m_alloc)::template rebind<node_type>::other m_node_alloc;
 					m_node_alloc.construct(node, value);
+				}
+
+				void m_construct_node(node_ptr node, T&& value)
+				{
+					typename decltype(m_alloc)::template rebind<node_type>::other m_node_alloc;
+					m_node_alloc.construct(node, std::move(value));
 				}
 
 				template <class ...Args>
@@ -211,6 +229,40 @@ namespace fl
 					clear();
 					m_initilize_dispatch(first, last, std::false_type());
 				}
+
+				template <class ...Args>
+				void m_insert(const_iterator pos, Args&&... args)
+				{
+
+					node_ptr new_node = m_acquire_node();
+					m_construct_node(new_node, std::forward<Args>(args)...);
+
+					if (size() == 0)
+					{
+						new_node->m_prev = m_sentinal;
+						new_node->m_next = m_sentinal;
+
+						m_head = new_node;
+						m_tail = new_node;
+
+						m_sentinal->m_next = m_head;
+						m_sentinal->m_prev = m_tail;
+					}
+					else
+					{
+						new_node->m_prev = pos.m_node->m_prev;
+						new_node->m_next = pos.m_node;	
+						pos.m_node->m_prev->m_next = new_node;
+						pos.m_node->m_prev = new_node;
+						if (pos == cend())
+							m_tail = new_node;
+						if (pos == cbegin())
+							m_head = new_node;
+					}
+
+					m_count++;
+				}
+
 				void m_insert(iterator pos, const T& value)
 				{
 					if (pos.m_node == m_head)
@@ -290,47 +342,6 @@ namespace fl
 					}
 				}
 
-				template <class ...Args>
-				void m_insert(const_iterator pos, Args&&... args)
-				{
-
-					node_ptr new_node = m_acquire_node();
-					m_construct_node(new_node, std::forward<Args>(args)...);
-					
-					if (m_count == 0)
-					{
-						m_head = new_node;
-						m_tail = new_node;
-						m_head->m_prev = m_sentinal;
-						m_tail->m_next = m_sentinal;
-						m_sentinal->m_prev = m_tail;
-						m_sentinal->m_next = m_head;
-					}
-					else
-					{
-						if (pos == cbegin())
-						{
-							m_head = new_node;
-							m_head->m_prev = m_sentinal;
-							m_sentinal->m_next = m_head;
-						}
-						if (pos == cend())
-						{
-							m_tail = new_node;
-							m_tail->m_next = m_sentinal;
-							m_sentinal->m_prev = m_tail;
-						}
-
-						new_node->m_prev = pos.m_node->m_prev;
-						new_node->m_next = pos.m_node;
-
-						pos.m_node->m_prev = new_node;
-						new_node->m_prev->m_next = new_node;
-					}
-					
-					m_count++;
-
-				}
 
 				void m_erase(const_iterator pos)
 				{

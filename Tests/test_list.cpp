@@ -19,28 +19,28 @@ int main()
 
 	std::cout << "Testing iterators.\n";
 	
-	ftd::List<int>::iterator it = lst1.begin();
-	ftd::List<int>::const_iterator cit = lst1.cbegin();
-	ftd::List<int>::reverse_iterator rit = lst1.rbegin();
-	ftd::List<int>::const_reverse_iterator rcit = lst1.rcbegin();
+	ftd::List<int>::iterator it = lst2.begin();
+	ftd::List<int>::const_iterator cit = lst2.cbegin();
+	ftd::List<int>::reverse_iterator rit = lst2.rbegin();
+	ftd::List<int>::const_reverse_iterator rcit = lst2.rcbegin();
 
 	std::cout << "Iterator: \n";
-	for (; it != lst1.end(); ++it)
+	for (; it != lst2.end(); ++it)
 		std::cout << *it << " ";
 	std::cout << std::endl;
 
 	std::cout << "Const_iterator: \n";
-	for (; cit != lst1.cend(); ++cit)
+	for (; cit != lst2.cend(); ++cit)
 		std::cout << *cit << " ";
 	std::cout << std::endl;
 
 	std::cout << "Reverse_iterator: \n";
-	for (; rit != lst1.rend(); ++rit)
+	for (; rit != lst2.rend(); ++rit)
 		std::cout << *rit << " ";
 	std::cout << std::endl;
 
 	std::cout << "Const_reverse_iterator: \n";
-	for (; rcit != lst1.rcend(); ++rcit)
+	for (; rcit != lst2.rcend(); ++rcit)
 		std::cout << *rcit << " ";
 	std::cout << std::endl;
 
@@ -61,18 +61,25 @@ int main()
 	std::cout << std::endl;
 
 	std::cout << "Testing emplacement:\n";
-	lst2.clear();
-	lst2.emplace_front(3);
-	lst2.emplace_back(4);
-	
-	for (; it != lst2.end(); ++it)
-		std::cout << *it << " ";
+	ftd::List<char> lst5;
+	lst5.emplace_back('a');
+	lst5.emplace_back('b');
+	lst5.emplace_back('c');
+	lst5.emplace_front('d');
+	lst5.emplace_front('e');
+	lst5.emplace_front('3');
+	auto pos = lst5.cbegin();
+	++pos;
+	lst5.emplace(pos, '4');
+	for (auto &e: lst5)
+		std::cout << e << " ";
 	std::cout << std::endl;
-/*	
+
 	std::cout << "Testing assignment:\n";
 	std::cout << "lst4 = lst2\n";
 	lst4 = lst2;
 	it = lst4.begin();
+	std::cout << "lst4: \n";
 	for (; it != lst4.end(); ++it)
 		std::cout << *it << " ";
 	std::cout << std::endl;
@@ -99,17 +106,19 @@ int main()
 		std::cout << *it << " ";
 	std::cout << std::endl;
 
-	std::cout << "Creating lst5 with {1,2,3,4,5,6,7,8,9,0}.\n";
-	ftd::List<int> lst5{1,2,3,4,5,6,7,8,9,0};
-	for (auto &e : lst5)
+/*
+	std::cout << "Creating lst6 with {1,2,3,4,5,6,7,8,9,0}.\n";
+	ftd::List<int> lst6{1,2,3,4,5,6,7,8,9,0};
+	for (auto &e : lst6)
 	{
 		std::cout << e << " ";
 	}
 	std::cout << std::endl;
+
 	std::cout << "Testing pop front and pop back:\n";
 	lst5.pop_front();
 	lst5.pop_back();
-	for (auto &e : lst5)
+	for (auto &e : lst6)
 		std::cout << e << " ";
 	std::cout << std::endl;
 
@@ -117,28 +126,28 @@ int main()
 	lst5.clear();
 	if (lst5.empty())
 		std::cout << "List cleared.\n";
-	for (auto &e : lst5)
+	for (auto &e : lst6)
 		std::cout << e << " ";
 	std::cout << std::endl;
 
 	std::cout << "Testing push back and push front: \n";
 	std::cout << "Pushing 5 at the back\n";
-	lst5.push_back(5);
+	lst6.push_back(5);
 	std::cout << "Pushing 6 at the back\n";
-	lst5.push_back(6);
+	lst6.push_back(6);
 	std::cout << "Pushing 1 at the front\n";
-	lst5.push_front(1);
+	lst6.push_front(1);
 	std::cout << "Pushing 12 at the front\n";
-	lst5.push_front(12);
+	lst6.push_front(12);
 
-	for (auto &e : lst5)
+	for (auto &e : lst6)
 		std::cout << e << " ";
 	std::cout <<std::endl;
 	
 	std::cout << "Testing size: \n";
-	ftd::List<int> lst6;
+	lst6 = {2,2,2};
 	std::cout << "Inserting 100 elements of 2.\n";
-	lst6.insert(lst6.cbegin(), 100, 2);
+	lst6.insert(lst6.cbegin(), 97, 2);
 	std::cout << "lst6 has " << lst6.size() << " elements of value " << *lst6.begin() << std::endl;
 
 	std::cout << "Testing resize:\n";
